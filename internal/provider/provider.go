@@ -3,6 +3,9 @@ package provider
 import (
 	"context"
 	"fmt"
+	"os"
+
+	"github.com/kubeberth/kubeberth-go"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -20,7 +23,7 @@ type provider struct {
 	// implementations can then make calls using this client.
 	//
 	// TODO: If appropriate, implement upstream provider SDK or HTTP client.
-	// client vendorsdk.ExampleClient
+	client *kubeberth.Client
 
 	// configured is set to true at the end of the Configure method.
 	// This can be used in Resource and DataSource implementations to verify
@@ -35,7 +38,7 @@ type provider struct {
 
 // providerData can be used to store data from the Terraform configuration.
 type providerData struct {
-	Example types.String `tfsdk:"example"`
+	URL types.String `tfsdk:"url"`
 }
 
 func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderRequest, resp *tfsdk.ConfigureProviderResponse) {
@@ -49,16 +52,40 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 
 	// Configuration values are now available.
 	// if data.Example.Null { /* ... */ }
+	var url string
+	if data.URL.Unknown {
+		resp.Diagnostics.AddError(
+			"Unable to create client",
+			"Cannot use unknown value as url",
+		)
+		return
+	}
+
+	if data.URL.Null {
+		url = os.Getenv("KUBEBERTH_URL")
+	} else {
+		url = data.URL.Value
+	}
+
+	if url == "" {
+		resp.Diagnostics.AddError(
+			"Unable to find url",
+			"URL cannot be an empty string",
+		)
+		return
+	}
 
 	// If the upstream provider SDK or HTTP client requires configuration, such
 	// as authentication or logging, this is a great opportunity to do so.
-
+	config := kubeberth.NewConfig(url)
+	client := kubeberth.NewClient(config)
+	p.client = client
 	p.configured = true
 }
 
 func (p *provider) GetResources(ctx context.Context) (map[string]tfsdk.ResourceType, diag.Diagnostics) {
 	return map[string]tfsdk.ResourceType{
-		"scaffolding_example": exampleResourceType{},
+		"kubeberth_server": serverResourceType{},
 	}, nil
 }
 
@@ -71,10 +98,10 @@ func (p *provider) GetDataSources(ctx context.Context) (map[string]tfsdk.DataSou
 func (p *provider) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
-			"example": {
-				MarkdownDescription: "Example provider attribute",
-				Optional:            true,
+			"url": {
+				MarkdownDescription: "Kubeberth's API endpoint URL.",
 				Type:                types.StringType,
+				Required: true,
 			},
 		},
 	}, nil
