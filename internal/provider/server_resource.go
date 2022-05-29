@@ -28,7 +28,7 @@ func (t serverResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.D
 
 		Attributes: map[string]tfsdk.Attribute{
 			"name": {
-				MarkdownDescription: "running",
+				MarkdownDescription: "name",
 				Type: types.StringType,
 				Required: true,
 			},
