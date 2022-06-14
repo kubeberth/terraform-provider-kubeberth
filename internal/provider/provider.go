@@ -88,6 +88,7 @@ func (p *provider) GetResources(ctx context.Context) (map[string]tfsdk.ResourceT
 		"kubeberth_server": serverResourceType{},
 		"kubeberth_disk": diskResourceType{},
 		"kubeberth_cloudinit": cloudinitResourceType{},
+		"kubeberth_archive": archiveResourceType{},
 	}, nil
 }
 
