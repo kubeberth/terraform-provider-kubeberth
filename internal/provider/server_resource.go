@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"k8s.io/apimachinery/pkg/api/resource"
 	"github.com/kubeberth/kubeberth-go"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -15,9 +16,9 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
-var _ tfsdk.ResourceType = serverResourceType{}
-var _ tfsdk.Resource = serverResource{}
-var _ tfsdk.ResourceWithImportState = serverResource{}
+//var _ tfsdk.ResourceType = serverResourceType{}
+//var _ tfsdk.Resource = serverResource{}
+//var _ tfsdk.ResourceWithImportState = serverResource{}
 
 type serverResourceType struct{}
 
@@ -35,11 +36,11 @@ func (t serverResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.D
 			"running": {
 				MarkdownDescription: "running",
 				Type: types.BoolType,
-				Required: true,
+				Optional: true,
 			},
 			"cpu": {
 				MarkdownDescription: "cpu",
-				Type: types.StringType,
+				Type: types.Int64Type,
 				Required: true,
 			},
 			"memory": {
@@ -50,22 +51,37 @@ func (t serverResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.D
 			"mac_address": {
 				MarkdownDescription: "mac_address",
 				Type: types.StringType,
-				Required: true,
+				Optional: true,
 			},
 			"hostname": {
 				MarkdownDescription: "hostname",
 				Type: types.StringType,
 				Required: true,
 			},
+			"hosting": {
+				MarkdownDescription: "hosting",
+				Type: types.StringType,
+				Optional: true,
+			},
 			"disk": {
 				MarkdownDescription: "disk",
-				Type: types.StringType,
 				Required: true,
+				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+					"name": {
+						Type: types.StringType,
+						Required: true,
+					},
+				}),
 			},
 			"cloudinit": {
 				MarkdownDescription: "cloudinit",
-				Type: types.StringType,
-				Required: true,
+				Optional: true,
+				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+					"name": {
+						Type: types.StringType,
+						Required: true,
+					},
+				}),
 			},
 		},
 	}, nil
@@ -79,15 +95,24 @@ func (t serverResourceType) NewResource(ctx context.Context, in tfsdk.Provider) 
 	}, diags
 }
 
+type diskData struct {
+	Name types.String `tfsdk:"name"`
+}
+
+type cloudinitData struct {
+	Name types.String `tfsdk:"name"`
+}
+
 type serverResourceData struct {
-	Name       string `tfsdk:"name"`
-	Running    bool   `tfsdk:"running"`
-	CPU        string `tfsdk:"cpu"`
-	Memory     string `tfsdk:"memory"`
-	MACAddress string `tfsdk:"mac_address"`
-	HostName   string `tfsdk:"hostname"`
-	Disk       string `tfsdk:"disk"`
-	CloudInit  string `tfsdk:"cloudinit"`
+	Name       types.String   `tfsdk:"name"`
+	Running    types.Bool     `tfsdk:"running"`
+	CPU        types.Int64    `tfsdk:"cpu"`
+	Memory     types.String   `tfsdk:"memory"`
+	MACAddress types.String   `tfsdk:"mac_address"`
+	Hostname   types.String   `tfsdk:"hostname"`
+	Hosting    types.String   `tfsdk:"hosting"`
+	Disk       *diskData      `tfsdk:"disk"`
+	CloudInit  *cloudinitData `tfsdk:"cloudinit"`
 }
 
 type serverResource struct {
@@ -95,19 +120,23 @@ type serverResource struct {
 }
 
 func createNewServer(data *serverResourceData) *kubeberth.Server {
+	cpu    := resource.MustParse(strconv.FormatInt(data.CPU.Value, 10))
+	memory := resource.MustParse(data.Memory.Value)
 	server := &kubeberth.Server{
-		Name: data.Name,
-		Running: strconv.FormatBool(data.Running),
-		CPU: data.CPU,
-		Memory: data.Memory,
-		MACAddress: data.MACAddress,
-		HostName: data.HostName,
-		Disk: &kubeberth.AttachedDisk{
-			Name: data.Disk,
-		},
-		CloudInit: &kubeberth.AttachedCloudInit{
-			Name: data.CloudInit,
-		},
+		Name:       data.Name.Value,
+		Running:    data.Running.Value,
+		CPU:        &cpu,
+		Memory:     &memory,
+		MACAddress: data.MACAddress.Value,
+		Hostname:   data.Hostname.Value,
+		Hosting:    data.Hosting.Value,
+		Disk:       &kubeberth.AttachedDisk{ Name: data.Disk.Name.Value },
+	}
+
+	if data.CloudInit != nil {
+		if !data.CloudInit.Name.Null {
+			server.CloudInit = &kubeberth.AttachedCloudInit{ Name: data.CloudInit.Name.Value }
+		}
 	}
 
 	return server
@@ -192,6 +221,16 @@ func (r serverResource) Update(ctx context.Context, req tfsdk.UpdateResourceRequ
 	//     return
 	// }
 
+	newServer := createNewServer(&data)
+	updatedServer, err := r.provider.client.UpdateServer(ctx, data.Name.Value, newServer)
+	tflog.Trace(ctx, fmt.Sprintf("server: %+v\n", updatedServer))
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update server, got error: %s", err))
+		return
+	}
+
+	tflog.Trace(ctx, "updated a resource")
+
 	diags = resp.State.Set(ctx, &data)
 	resp.Diagnostics.Append(diags...)
 }
@@ -213,7 +252,7 @@ func (r serverResource) Delete(ctx context.Context, req tfsdk.DeleteResourceRequ
 	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete example, got error: %s", err))
 	//     return
 	// }
-	ok, err := r.provider.client.DeleteServer(ctx, data.Name)
+	ok, err := r.provider.client.DeleteServer(ctx, data.Name.Value)
 	tflog.Trace(ctx, fmt.Sprintf("server: %+v\n", ok))
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete server, got error: %s", err))

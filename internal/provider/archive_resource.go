@@ -14,9 +14,9 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
-var _ tfsdk.ResourceType = archiveResourceType{}
-var _ tfsdk.Resource = archiveResource{}
-var _ tfsdk.ResourceWithImportState = archiveResource{}
+//var _ tfsdk.ResourceType = archiveResourceType{}
+//var _ tfsdk.Resource = archiveResource{}
+//var _ tfsdk.ResourceWithImportState = archiveResource{}
 
 type archiveResourceType struct{}
 
@@ -49,8 +49,8 @@ func (t archiveResourceType) NewResource(ctx context.Context, in tfsdk.Provider)
 }
 
 type archiveResourceData struct {
-	Name string `tfsdk:"name"`
-	URL  string `tfsdk:"url"`
+	Name types.String `tfsdk:"name"`
+	URL  types.String `tfsdk:"url"`
 }
 
 type archiveResource struct {
@@ -59,8 +59,8 @@ type archiveResource struct {
 
 func createNewArchive(data *archiveResourceData) *kubeberth.Archive {
 	archive := &kubeberth.Archive{
-		Name: data.Name,
-		URL: data.URL,
+		Name: data.Name.Value,
+		URL:  data.URL.Value,
 	}
 
 	return archive
@@ -145,6 +145,16 @@ func (r archiveResource) Update(ctx context.Context, req tfsdk.UpdateResourceReq
 	//     return
 	// }
 
+	newArchive := createNewArchive(&data)
+	updatedArchive, err := r.provider.client.UpdateArchive(ctx, data.Name.Value, newArchive)
+	tflog.Trace(ctx, fmt.Sprintf("archive: %+v\n", updatedArchive))
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update archive, got error: %s", err))
+		return
+	}
+
+	tflog.Trace(ctx, "updated a resource")
+
 	diags = resp.State.Set(ctx, &data)
 	resp.Diagnostics.Append(diags...)
 }
@@ -166,7 +176,7 @@ func (r archiveResource) Delete(ctx context.Context, req tfsdk.DeleteResourceReq
 	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete example, got error: %s", err))
 	//     return
 	// }
-	ok, err := r.provider.client.DeleteArchive(ctx, data.Name)
+	ok, err := r.provider.client.DeleteArchive(ctx, data.Name.Value)
 	tflog.Trace(ctx, fmt.Sprintf("archive: %+v\n", ok))
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete archive, got error: %s", err))

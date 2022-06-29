@@ -14,9 +14,9 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
-var _ tfsdk.ResourceType = diskResourceType{}
-var _ tfsdk.Resource = diskResource{}
-var _ tfsdk.ResourceWithImportState = diskResource{}
+//var _ tfsdk.ResourceType = diskResourceType{}
+//var _ tfsdk.Resource = diskResource{}
+//var _ tfsdk.ResourceWithImportState = diskResource{}
 
 type diskResourceType struct{}
 
@@ -36,20 +36,20 @@ func (t diskResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Dia
 				Type: types.StringType,
 				Required: true,
 			},
-			"archive": {
-				MarkdownDescription: "archive",
-				Type: types.StringType,
-				Required: false,
+			"source": {
+				MarkdownDescription: "source",
 				Optional: true,
+				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+					"archive": {
+						Type: types.StringType,
+						Optional: true,
+					},
+					"disk": {
+						Type: types.StringType,
+						Optional: true,
+					},
+				}),
 			},
-			/*
-			"disk": {
-				MarkdownDescription: "disk",
-				Type: types.StringType,
-				Required: false,
-				Optional: true,
-			},
-			*/
 		},
 	}, nil
 }
@@ -62,11 +62,15 @@ func (t diskResourceType) NewResource(ctx context.Context, in tfsdk.Provider) (t
 	}, diags
 }
 
+type sourceData struct {
+	Archive types.String `tfsdk:"archive"`
+	Disk    types.String `tfsdk:"disk"`
+}
+
 type diskResourceData struct {
-	Name    string `tfsdk:"name"`
-	Size    string `tfsdk:"size"`
-	Archive string `tfsdk:"archive"`
-	//Disk    string `tfsdk:"disk"`
+	Name   types.String `tfsdk:"name"`
+	Size   types.String `tfsdk:"size"`
+	Source *sourceData  `tfsdk:"source"`
 }
 
 type diskResource struct {
@@ -75,26 +79,23 @@ type diskResource struct {
 
 func createNewDisk(data *diskResourceData) *kubeberth.Disk {
 	disk := &kubeberth.Disk{
-		Name: data.Name,
-		Size: data.Size,
+		Name: data.Name.Value,
+		Size: data.Size.Value,
+		Source: &kubeberth.AttachedSource{},
 	}
 
-	source := &kubeberth.AttachedSource{}
-	disk.Source = source
-
-	if data.Archive != "" {
-		source.Archive = &kubeberth.AttachedArchive{
-			Name: data.Archive,
+	if data.Source != nil {
+		if !data.Source.Archive.Null {
+			disk.Source.Archive = &kubeberth.AttachedArchive{
+				Name: data.Source.Archive.Value,
+			}
+		}
+		if !data.Source.Disk.Null {
+			disk.Source.Disk =  &kubeberth.AttachedDisk{
+				Name: data.Source.Disk.Value,
+			}
 		}
 	}
-
-	/*
-	if data.Disk != "" {
-		source.Disk = &kubeberth.AttachedDisk{
-			Name: data.Disk,
-		}
-	}
-	*/
 
 	return disk
 }
@@ -178,6 +179,16 @@ func (r diskResource) Update(ctx context.Context, req tfsdk.UpdateResourceReques
 	//     return
 	// }
 
+	newDisk := createNewDisk(&data)
+	updatedDisk, err := r.provider.client.UpdateDisk(ctx, data.Name.Value, newDisk)
+	tflog.Trace(ctx, fmt.Sprintf("disk: %+v\n", updatedDisk))
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update disk, got error: %s", err))
+		return
+	}
+
+	tflog.Trace(ctx, "updated a resource")
+
 	diags = resp.State.Set(ctx, &data)
 	resp.Diagnostics.Append(diags...)
 }
@@ -199,7 +210,7 @@ func (r diskResource) Delete(ctx context.Context, req tfsdk.DeleteResourceReques
 	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete example, got error: %s", err))
 	//     return
 	// }
-	ok, err := r.provider.client.DeleteDisk(ctx, data.Name)
+	ok, err := r.provider.client.DeleteDisk(ctx, data.Name.Value)
 	tflog.Trace(ctx, fmt.Sprintf("disk: %+v\n", ok))
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete disk, got error: %s", err))
