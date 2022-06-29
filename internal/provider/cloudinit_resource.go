@@ -14,9 +14,9 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
-var _ tfsdk.ResourceType = cloudinitResourceType{}
-var _ tfsdk.Resource = cloudinitResource{}
-var _ tfsdk.ResourceWithImportState = cloudinitResource{}
+//var _ tfsdk.ResourceType = cloudinitResourceType{}
+//var _ tfsdk.Resource = cloudinitResource{}
+//var _ tfsdk.ResourceWithImportState = cloudinitResource{}
 
 type cloudinitResourceType struct{}
 
@@ -34,7 +34,11 @@ func (t cloudinitResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, dia
 			"user_data": {
 				MarkdownDescription: "user_data",
 				Type: types.StringType,
-				Required: false,
+				Optional: true,
+			},
+			"network_data": {
+				MarkdownDescription: "network_data",
+				Type: types.StringType,
 				Optional: true,
 			},
 		},
@@ -50,8 +54,9 @@ func (t cloudinitResourceType) NewResource(ctx context.Context, in tfsdk.Provide
 }
 
 type cloudinitResourceData struct {
-	Name     string `tfsdk:"name"`
-	UserData string `tfsdk:"user_data"`
+	Name        types.String `tfsdk:"name"`
+	UserData    types.String `tfsdk:"user_data"`
+	NetworkData types.String `tfsdk:"network_data"`
 }
 
 type cloudinitResource struct {
@@ -60,8 +65,14 @@ type cloudinitResource struct {
 
 func createNewCloudInit(data *cloudinitResourceData) *kubeberth.CloudInit {
 	cloudinit := &kubeberth.CloudInit{
-		Name: data.Name,
-		UserData: data.UserData,
+		Name: data.Name.Value,
+	}
+
+	if !data.UserData.Null {
+		cloudinit.UserData = data.UserData.Value
+	}
+	if !data.NetworkData.Null {
+		cloudinit.NetworkData = data.NetworkData.Value
 	}
 
 	return cloudinit
@@ -146,6 +157,16 @@ func (r cloudinitResource) Update(ctx context.Context, req tfsdk.UpdateResourceR
 	//     return
 	// }
 
+	newCloudInit := createNewCloudInit(&data)
+	updatedCloudInit, err := r.provider.client.UpdateCloudInit(ctx, data.Name.Value, newCloudInit)
+	tflog.Trace(ctx, fmt.Sprintf("cloudinit: %+v\n", updatedCloudInit))
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update cloudinit, got error: %s", err))
+		return
+	}
+
+	tflog.Trace(ctx, "updated a resource")
+
 	diags = resp.State.Set(ctx, &data)
 	resp.Diagnostics.Append(diags...)
 }
@@ -167,7 +188,7 @@ func (r cloudinitResource) Delete(ctx context.Context, req tfsdk.DeleteResourceR
 	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete example, got error: %s", err))
 	//     return
 	// }
-	ok, err := r.provider.client.DeleteCloudInit(ctx, data.Name)
+	ok, err := r.provider.client.DeleteCloudInit(ctx, data.Name.Value)
 	tflog.Trace(ctx, fmt.Sprintf("cloudinit: %+v\n", ok))
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete cloudinit, got error: %s", err))
