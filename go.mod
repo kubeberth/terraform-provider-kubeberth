@@ -10,7 +10,10 @@ require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.16.0
 )
 
-require github.com/kubeberth/kubeberth-go v0.8.1
+require (
+	github.com/kubeberth/kubeberth-go v0.8.2
+	k8s.io/apimachinery v0.24.0
+)
 
 require (
 	github.com/Masterminds/goutils v1.1.0 // indirect
@@ -115,7 +118,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	k8s.io/api v0.24.0 // indirect
 	k8s.io/apiextensions-apiserver v0.23.1 // indirect
-	k8s.io/apimachinery v0.24.0 // indirect
 	k8s.io/client-go v0.24.0 // indirect
 	k8s.io/component-base v0.23.1 // indirect
 	k8s.io/klog/v2 v2.60.1 // indirect
