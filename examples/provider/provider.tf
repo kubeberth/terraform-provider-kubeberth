@@ -2,7 +2,7 @@ terraform {
   required_providers {
     kubeberth = {
       source  = "local/kubeberth/kubeberth"
-      version = "0.0.5"
+      version = "0.9.0"
     }
   }
   required_version = "~> 1.2.0"
