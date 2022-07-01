@@ -77,8 +77,8 @@ type diskResource struct {
 	provider provider
 }
 
-func createNewDisk(data *diskResourceData) *kubeberth.Disk {
-	disk := &kubeberth.Disk{
+func newRequestDisk(data *diskResourceData) *kubeberth.RequestDisk {
+	requestDisk := &kubeberth.RequestDisk{
 		Name: data.Name.Value,
 		Size: data.Size.Value,
 		Source: &kubeberth.AttachedSource{},
@@ -86,18 +86,18 @@ func createNewDisk(data *diskResourceData) *kubeberth.Disk {
 
 	if data.Source != nil {
 		if !data.Source.Archive.Null {
-			disk.Source.Archive = &kubeberth.AttachedArchive{
+			requestDisk.Source.Archive = &kubeberth.AttachedArchive{
 				Name: data.Source.Archive.Value,
 			}
 		}
 		if !data.Source.Disk.Null {
-			disk.Source.Disk =  &kubeberth.AttachedDisk{
+			requestDisk.Source.Disk =  &kubeberth.AttachedDisk{
 				Name: data.Source.Disk.Value,
 			}
 		}
 	}
 
-	return disk
+	return requestDisk
 }
 
 func (r diskResource) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
@@ -118,9 +118,9 @@ func (r diskResource) Create(ctx context.Context, req tfsdk.CreateResourceReques
 	//     return
 	// }
 
-	newDisk := createNewDisk(&data)
-	createdDisk, err := r.provider.client.CreateDisk(ctx, newDisk)
-	tflog.Trace(ctx, fmt.Sprintf("disk: %+v\n", createdDisk))
+	requestDisk := newRequestDisk(&data)
+	responseDisk, err := r.provider.client.CreateDisk(ctx, requestDisk)
+	tflog.Trace(ctx, fmt.Sprintf("disk: %+v\n", responseDisk))
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create disk, got error: %s", err))
 		return
@@ -133,6 +133,7 @@ func (r diskResource) Create(ctx context.Context, req tfsdk.CreateResourceReques
 	// write logs using the tflog package
 	// see https://pkg.go.dev/github.com/hashicorp/terraform-plugin-log/tflog
 	// for more information
+
 	tflog.Trace(ctx, "created a resource")
 
 	diags = resp.State.Set(ctx, &data)
@@ -157,6 +158,15 @@ func (r diskResource) Read(ctx context.Context, req tfsdk.ReadResourceRequest, r
 	//     return
 	// }
 
+	responseDisk, err := r.provider.client.GetDisk(ctx, data.Name.Value)
+	tflog.Trace(ctx, fmt.Sprintf("disk: %+v\n", responseDisk))
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read disk, got error: %s", err))
+		return
+	}
+
+	tflog.Trace(ctx, "read a resource")
+
 	diags = resp.State.Set(ctx, &data)
 	resp.Diagnostics.Append(diags...)
 }
@@ -179,9 +189,9 @@ func (r diskResource) Update(ctx context.Context, req tfsdk.UpdateResourceReques
 	//     return
 	// }
 
-	newDisk := createNewDisk(&data)
-	updatedDisk, err := r.provider.client.UpdateDisk(ctx, data.Name.Value, newDisk)
-	tflog.Trace(ctx, fmt.Sprintf("disk: %+v\n", updatedDisk))
+	requestDisk := newRequestDisk(&data)
+	responseDisk, err := r.provider.client.UpdateDisk(ctx, data.Name.Value, requestDisk)
+	tflog.Trace(ctx, fmt.Sprintf("disk: %+v\n", responseDisk))
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update disk, got error: %s", err))
 		return
@@ -210,6 +220,7 @@ func (r diskResource) Delete(ctx context.Context, req tfsdk.DeleteResourceReques
 	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete example, got error: %s", err))
 	//     return
 	// }
+
 	ok, err := r.provider.client.DeleteDisk(ctx, data.Name.Value)
 	tflog.Trace(ctx, fmt.Sprintf("disk: %+v\n", ok))
 	if err != nil {
