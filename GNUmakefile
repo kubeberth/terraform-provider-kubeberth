@@ -1,4 +1,6 @@
 VERSION=0.8.0
+OS=$(shell go env GOOS)
+ARCH=$(shell go env GOARCH)
 
 default: testacc
 
@@ -13,6 +15,6 @@ init:
 
 .PHONY: build
 build:
-	mkdir -p ~/.terraform.d/plugins/local/kubeberth/kubeberth/${VERSION}/linux_amd64
+	mkdir -p ~/.terraform.d/plugins/local/kubeberth/kubeberth/${VERSION}/${OS}_${ARCH}
 	go build -o bin/terraform-provider-kubeberth_v${VERSION}
-	cp bin/terraform-provider-kubeberth_v${VERSION} ~/.terraform.d/plugins/local/kubeberth/kubeberth/${VERSION}/linux_amd64/
+	cp bin/terraform-provider-kubeberth_v${VERSION} ~/.terraform.d/plugins/local/kubeberth/kubeberth/${VERSION}/${OS}_${ARCH}/
