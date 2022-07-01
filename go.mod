@@ -11,7 +11,7 @@ require (
 )
 
 require (
-	github.com/kubeberth/kubeberth-go v0.8.3
+	github.com/kubeberth/kubeberth-go v0.9.0
 	k8s.io/apimachinery v0.24.0
 )
 
@@ -69,8 +69,8 @@ require (
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kubeberth/kubeberth-apiserver v0.8.3 // indirect
-	github.com/kubeberth/kubeberth-operator v0.8.5 // indirect
+	github.com/kubeberth/kubeberth-apiserver v0.9.0 // indirect
+	github.com/kubeberth/kubeberth-operator v0.9.0 // indirect
 	github.com/leodido/go-urn v1.2.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect

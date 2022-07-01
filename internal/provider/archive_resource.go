@@ -28,13 +28,13 @@ func (t archiveResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.
 		Attributes: map[string]tfsdk.Attribute{
 			"name": {
 				MarkdownDescription: "name",
-				Type: types.StringType,
-				Required: true,
+				Type:                types.StringType,
+				Required:            true,
 			},
-			"url": {
-				MarkdownDescription: "url",
-				Type: types.StringType,
-				Required: true,
+			"repository": {
+				MarkdownDescription: "repository",
+				Type:                types.StringType,
+				Required:            true,
 			},
 		},
 	}, nil
@@ -49,8 +49,8 @@ func (t archiveResourceType) NewResource(ctx context.Context, in tfsdk.Provider)
 }
 
 type archiveResourceData struct {
-	Name types.String `tfsdk:"name"`
-	URL  types.String `tfsdk:"url"`
+	Name       types.String `tfsdk:"name"`
+	Repository types.String `tfsdk:"repository"`
 }
 
 type archiveResource struct {
@@ -59,8 +59,8 @@ type archiveResource struct {
 
 func createNewArchive(data *archiveResourceData) *kubeberth.Archive {
 	archive := &kubeberth.Archive{
-		Name: data.Name.Value,
-		URL:  data.URL.Value,
+		Name:       data.Name.Value,
+		Repository: data.Repository.Value,
 	}
 
 	return archive
