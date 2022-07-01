@@ -111,6 +111,7 @@ func (r cloudinitResource) Create(ctx context.Context, req tfsdk.CreateResourceR
 	// write logs using the tflog package
 	// see https://pkg.go.dev/github.com/hashicorp/terraform-plugin-log/tflog
 	// for more information
+
 	tflog.Trace(ctx, "created a resource")
 
 	diags = resp.State.Set(ctx, &data)
@@ -134,6 +135,15 @@ func (r cloudinitResource) Read(ctx context.Context, req tfsdk.ReadResourceReque
 	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read example, got error: %s", err))
 	//     return
 	// }
+
+	cloudinit, err := r.provider.client.GetCloudInit(ctx, data.Name.Value)
+	tflog.Trace(ctx, fmt.Sprintf("cloudinit: %+v\n", cloudinit))
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read cloudinit, got error: %s", err))
+		return
+	}
+
+	tflog.Trace(ctx, "read a resource")
 
 	diags = resp.State.Set(ctx, &data)
 	resp.Diagnostics.Append(diags...)
@@ -188,6 +198,7 @@ func (r cloudinitResource) Delete(ctx context.Context, req tfsdk.DeleteResourceR
 	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete example, got error: %s", err))
 	//     return
 	// }
+
 	ok, err := r.provider.client.DeleteCloudInit(ctx, data.Name.Value)
 	tflog.Trace(ctx, fmt.Sprintf("cloudinit: %+v\n", ok))
 	if err != nil {

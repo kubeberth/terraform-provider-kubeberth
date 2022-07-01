@@ -119,10 +119,10 @@ type serverResource struct {
 	provider provider
 }
 
-func createNewServer(data *serverResourceData) *kubeberth.Server {
+func newRequestServer(data *serverResourceData) *kubeberth.RequestServer {
 	cpu    := resource.MustParse(strconv.FormatInt(data.CPU.Value, 10))
 	memory := resource.MustParse(data.Memory.Value)
-	server := &kubeberth.Server{
+	server := &kubeberth.RequestServer{
 		Name:       data.Name.Value,
 		Running:    data.Running.Value,
 		CPU:        &cpu,
@@ -160,9 +160,9 @@ func (r serverResource) Create(ctx context.Context, req tfsdk.CreateResourceRequ
 	//     return
 	// }
 
-	newServer := createNewServer(&data)
-	createdServer, err := r.provider.client.CreateServer(ctx, newServer)
-	tflog.Trace(ctx, fmt.Sprintf("server: %+v\n", createdServer))
+	requestServer := newRequestServer(&data)
+	responseServer, err := r.provider.client.CreateServer(ctx, requestServer)
+	tflog.Trace(ctx, fmt.Sprintf("server: %+v\n", responseServer))
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create server, got error: %s", err))
 		return
@@ -175,6 +175,7 @@ func (r serverResource) Create(ctx context.Context, req tfsdk.CreateResourceRequ
 	// write logs using the tflog package
 	// see https://pkg.go.dev/github.com/hashicorp/terraform-plugin-log/tflog
 	// for more information
+
 	tflog.Trace(ctx, "created a resource")
 
 	diags = resp.State.Set(ctx, &data)
@@ -199,6 +200,15 @@ func (r serverResource) Read(ctx context.Context, req tfsdk.ReadResourceRequest,
 	//     return
 	// }
 
+	responseServer, err := r.provider.client.GetServer(ctx, data.Name.Value)
+	tflog.Trace(ctx, fmt.Sprintf("server: %+v\n", responseServer))
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read server, got error: %s", err))
+		return
+	}
+
+	tflog.Trace(ctx, "read a resource")
+
 	diags = resp.State.Set(ctx, &data)
 	resp.Diagnostics.Append(diags...)
 }
@@ -221,9 +231,9 @@ func (r serverResource) Update(ctx context.Context, req tfsdk.UpdateResourceRequ
 	//     return
 	// }
 
-	newServer := createNewServer(&data)
-	updatedServer, err := r.provider.client.UpdateServer(ctx, data.Name.Value, newServer)
-	tflog.Trace(ctx, fmt.Sprintf("server: %+v\n", updatedServer))
+	requestServer := newRequestServer(&data)
+	responseServer, err := r.provider.client.UpdateServer(ctx, data.Name.Value, requestServer)
+	tflog.Trace(ctx, fmt.Sprintf("server: %+v\n", responseServer))
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update server, got error: %s", err))
 		return
@@ -252,6 +262,7 @@ func (r serverResource) Delete(ctx context.Context, req tfsdk.DeleteResourceRequ
 	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete example, got error: %s", err))
 	//     return
 	// }
+
 	ok, err := r.provider.client.DeleteServer(ctx, data.Name.Value)
 	tflog.Trace(ctx, fmt.Sprintf("server: %+v\n", ok))
 	if err != nil {

@@ -99,6 +99,7 @@ func (r archiveResource) Create(ctx context.Context, req tfsdk.CreateResourceReq
 	// write logs using the tflog package
 	// see https://pkg.go.dev/github.com/hashicorp/terraform-plugin-log/tflog
 	// for more information
+
 	tflog.Trace(ctx, "created a resource")
 
 	diags = resp.State.Set(ctx, &data)
@@ -122,6 +123,15 @@ func (r archiveResource) Read(ctx context.Context, req tfsdk.ReadResourceRequest
 	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read example, got error: %s", err))
 	//     return
 	// }
+
+	archive, err := r.provider.client.GetArchive(ctx, data.Name.Value)
+	tflog.Trace(ctx, fmt.Sprintf("archive: %+v\n", archive))
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read archive, got error: %s", err))
+		return
+	}
+
+	tflog.Trace(ctx, "read a resource")
 
 	diags = resp.State.Set(ctx, &data)
 	resp.Diagnostics.Append(diags...)
@@ -176,6 +186,7 @@ func (r archiveResource) Delete(ctx context.Context, req tfsdk.DeleteResourceReq
 	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete example, got error: %s", err))
 	//     return
 	// }
+
 	ok, err := r.provider.client.DeleteArchive(ctx, data.Name.Value)
 	tflog.Trace(ctx, fmt.Sprintf("archive: %+v\n", ok))
 	if err != nil {
