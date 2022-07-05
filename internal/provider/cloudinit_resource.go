@@ -22,7 +22,7 @@ type cloudinitResourceType struct{}
 
 func (t cloudinitResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
-		// This description is used by the documentation generator and the language cloudinit.
+		// This description is used by the documentation generator and the language server.
 		MarkdownDescription: "Example resource",
 
 		Attributes: map[string]tfsdk.Attribute{
