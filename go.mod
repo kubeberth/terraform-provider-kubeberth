@@ -13,7 +13,7 @@ require (
 require (
 	github.com/kubeberth/kubeberth-go v0.10.0
 	k8s.io/api v0.24.0
-	k8s.io/apimachinery v0.24.0
+	k8s.io/apimachinery v0.24.2
 )
 
 require (
