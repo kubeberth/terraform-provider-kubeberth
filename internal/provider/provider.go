@@ -86,10 +86,10 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 func (p *provider) GetResources(ctx context.Context) (map[string]tfsdk.ResourceType, diag.Diagnostics) {
 	return map[string]tfsdk.ResourceType{
 		"kubeberth_loadbalancer": loadbalancerResourceType{},
-		"kubeberth_server"      : serverResourceType{},
-		"kubeberth_disk"        : diskResourceType{},
-		"kubeberth_cloudinit"   : cloudinitResourceType{},
-		"kubeberth_archive"     : archiveResourceType{},
+		"kubeberth_server":       serverResourceType{},
+		"kubeberth_disk":         diskResourceType{},
+		"kubeberth_cloudinit":    cloudinitResourceType{},
+		"kubeberth_archive":      archiveResourceType{},
 	}, nil
 }
 
@@ -105,7 +105,7 @@ func (p *provider) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostic
 			"url": {
 				MarkdownDescription: "Kubeberth's API endpoint URL.",
 				Type:                types.StringType,
-				Required: true,
+				Required:            true,
 			},
 		},
 	}, nil
