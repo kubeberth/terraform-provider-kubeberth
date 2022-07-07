@@ -31,37 +31,37 @@ func (t loadbalancerResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, 
 		Attributes: map[string]tfsdk.Attribute{
 			"name": {
 				MarkdownDescription: "name",
-				Type: types.StringType,
-				Required: true,
+				Type:                types.StringType,
+				Required:            true,
 			},
 			"backends": {
 				MarkdownDescription: "backends",
-				Required: true,
+				Optional:            true,
 				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 					"server": {
-						Type: types.StringType,
+						Type:     types.StringType,
 						Required: true,
 					},
 				}, tfsdk.ListNestedAttributesOptions{}),
 			},
 			"ports": {
 				MarkdownDescription: "ports",
-				Required: true,
+				Required:            true,
 				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 					"name": {
-						Type: types.StringType,
+						Type:     types.StringType,
 						Required: true,
 					},
 					"protocol": {
-						Type: types.StringType,
+						Type:     types.StringType,
 						Required: true,
 					},
 					"port": {
-						Type: types.Int64Type,
+						Type:     types.Int64Type,
 						Required: true,
 					},
 					"target_port": {
-						Type: types.Int64Type,
+						Type:     types.Int64Type,
 						Required: true,
 					},
 				}, tfsdk.ListNestedAttributesOptions{}),
@@ -90,9 +90,9 @@ type portData struct {
 }
 
 type loadbalancerResourceData struct {
-	Name       types.String      `tfsdk:"name"`
-	Backends   []destinationData `tfsdk:"backends"`
-	Ports      []portData        `tfsdk:"ports"`
+	Name     types.String      `tfsdk:"name"`
+	Backends []destinationData `tfsdk:"backends"`
+	Ports    []portData        `tfsdk:"ports"`
 }
 
 type loadbalancerResource struct {
@@ -100,7 +100,6 @@ type loadbalancerResource struct {
 }
 
 func newRequestLoadBalancer(data *loadbalancerResourceData) *kubeberth.RequestLoadBalancer {
-	
 
 	backends := []kubeberth.Destination{}
 	for _, destination := range data.Backends {
@@ -118,9 +117,9 @@ func newRequestLoadBalancer(data *loadbalancerResourceData) *kubeberth.RequestLo
 	}
 
 	loadbalancer := &kubeberth.RequestLoadBalancer{
-		Name: data.Name.Value,
+		Name:     data.Name.Value,
 		Backends: backends,
-		Ports: ports,
+		Ports:    ports,
 	}
 
 	return loadbalancer
