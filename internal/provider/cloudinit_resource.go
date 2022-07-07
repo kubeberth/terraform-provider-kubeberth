@@ -28,18 +28,18 @@ func (t cloudinitResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, dia
 		Attributes: map[string]tfsdk.Attribute{
 			"name": {
 				MarkdownDescription: "name",
-				Type: types.StringType,
-				Required: true,
+				Type:                types.StringType,
+				Required:            true,
 			},
 			"user_data": {
 				MarkdownDescription: "user_data",
-				Type: types.StringType,
-				Optional: true,
+				Type:                types.StringType,
+				Optional:            true,
 			},
 			"network_data": {
 				MarkdownDescription: "network_data",
-				Type: types.StringType,
-				Optional: true,
+				Type:                types.StringType,
+				Optional:            true,
 			},
 		},
 	}, nil

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"k8s.io/apimachinery/pkg/api/resource"
 	"github.com/kubeberth/kubeberth-go"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -30,55 +30,55 @@ func (t serverResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.D
 		Attributes: map[string]tfsdk.Attribute{
 			"name": {
 				MarkdownDescription: "name",
-				Type: types.StringType,
-				Required: true,
+				Type:                types.StringType,
+				Required:            true,
 			},
 			"running": {
 				MarkdownDescription: "running",
-				Type: types.BoolType,
-				Optional: true,
+				Type:                types.BoolType,
+				Optional:            true,
 			},
 			"cpu": {
 				MarkdownDescription: "cpu",
-				Type: types.Int64Type,
-				Required: true,
+				Type:                types.Int64Type,
+				Required:            true,
 			},
 			"memory": {
 				MarkdownDescription: "memory",
-				Type: types.StringType,
-				Required: true,
+				Type:                types.StringType,
+				Required:            true,
 			},
 			"mac_address": {
 				MarkdownDescription: "mac_address",
-				Type: types.StringType,
-				Optional: true,
+				Type:                types.StringType,
+				Optional:            true,
 			},
 			"hostname": {
 				MarkdownDescription: "hostname",
-				Type: types.StringType,
-				Required: true,
+				Type:                types.StringType,
+				Required:            true,
 			},
 			"hosting": {
 				MarkdownDescription: "hosting",
-				Type: types.StringType,
-				Optional: true,
+				Type:                types.StringType,
+				Optional:            true,
 			},
 			"disk": {
 				MarkdownDescription: "disk",
-				Required: true,
+				Required:            true,
 				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 					"name": {
-						Type: types.StringType,
+						Type:     types.StringType,
 						Required: true,
 					},
 				}),
 			},
 			"cloudinit": {
 				MarkdownDescription: "cloudinit",
-				Optional: true,
+				Optional:            true,
 				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 					"name": {
-						Type: types.StringType,
+						Type:     types.StringType,
 						Required: true,
 					},
 				}),
@@ -120,7 +120,7 @@ type serverResource struct {
 }
 
 func newRequestServer(data *serverResourceData) *kubeberth.RequestServer {
-	cpu    := resource.MustParse(strconv.FormatInt(data.CPU.Value, 10))
+	cpu := resource.MustParse(strconv.FormatInt(data.CPU.Value, 10))
 	memory := resource.MustParse(data.Memory.Value)
 	server := &kubeberth.RequestServer{
 		Name:       data.Name.Value,
@@ -130,12 +130,12 @@ func newRequestServer(data *serverResourceData) *kubeberth.RequestServer {
 		MACAddress: data.MACAddress.Value,
 		Hostname:   data.Hostname.Value,
 		Hosting:    data.Hosting.Value,
-		Disk:       &kubeberth.AttachedDisk{ Name: data.Disk.Name.Value },
+		Disk:       &kubeberth.AttachedDisk{Name: data.Disk.Name.Value},
 	}
 
 	if data.CloudInit != nil {
 		if !data.CloudInit.Name.Null {
-			server.CloudInit = &kubeberth.AttachedCloudInit{ Name: data.CloudInit.Name.Value }
+			server.CloudInit = &kubeberth.AttachedCloudInit{Name: data.CloudInit.Name.Value}
 		}
 	}
 

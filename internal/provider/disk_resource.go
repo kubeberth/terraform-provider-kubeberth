@@ -28,24 +28,24 @@ func (t diskResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Dia
 		Attributes: map[string]tfsdk.Attribute{
 			"name": {
 				MarkdownDescription: "name",
-				Type: types.StringType,
-				Required: true,
+				Type:                types.StringType,
+				Required:            true,
 			},
 			"size": {
 				MarkdownDescription: "size",
-				Type: types.StringType,
-				Required: true,
+				Type:                types.StringType,
+				Required:            true,
 			},
 			"source": {
 				MarkdownDescription: "source",
-				Optional: true,
+				Optional:            true,
 				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 					"archive": {
-						Type: types.StringType,
+						Type:     types.StringType,
 						Optional: true,
 					},
 					"disk": {
-						Type: types.StringType,
+						Type:     types.StringType,
 						Optional: true,
 					},
 				}),
@@ -79,8 +79,8 @@ type diskResource struct {
 
 func newRequestDisk(data *diskResourceData) *kubeberth.RequestDisk {
 	requestDisk := &kubeberth.RequestDisk{
-		Name: data.Name.Value,
-		Size: data.Size.Value,
+		Name:   data.Name.Value,
+		Size:   data.Size.Value,
 		Source: &kubeberth.AttachedSource{},
 	}
 
@@ -91,7 +91,7 @@ func newRequestDisk(data *diskResourceData) *kubeberth.RequestDisk {
 			}
 		}
 		if !data.Source.Disk.Null {
-			requestDisk.Source.Disk =  &kubeberth.AttachedDisk{
+			requestDisk.Source.Disk = &kubeberth.AttachedDisk{
 				Name: data.Source.Disk.Value,
 			}
 		}
