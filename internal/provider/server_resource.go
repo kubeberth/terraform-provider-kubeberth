@@ -63,15 +63,15 @@ func (t serverResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.D
 				Type:                types.StringType,
 				Optional:            true,
 			},
-			"disk": {
-				MarkdownDescription: "disk",
-				Required:            true,
-				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+			"disks": {
+				MarkdownDescription: "disks",
+				Optional:            true,
+				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 					"name": {
 						Type:     types.StringType,
 						Required: true,
 					},
-				}),
+				}, tfsdk.ListNestedAttributesOptions{}),
 			},
 			"cloudinit": {
 				MarkdownDescription: "cloudinit",
@@ -111,7 +111,7 @@ type serverResourceData struct {
 	MACAddress types.String   `tfsdk:"mac_address"`
 	Hostname   types.String   `tfsdk:"hostname"`
 	Hosting    types.String   `tfsdk:"hosting"`
-	Disk       *diskData      `tfsdk:"disk"`
+	Disks      []diskData     `tfsdk:"disks"`
 	CloudInit  *cloudinitData `tfsdk:"cloudinit"`
 }
 
@@ -120,8 +120,13 @@ type serverResource struct {
 }
 
 func newRequestServer(data *serverResourceData) *kubeberth.RequestServer {
-	cpu := resource.MustParse(strconv.FormatInt(data.CPU.Value, 10))
+	cpu    := resource.MustParse(strconv.FormatInt(data.CPU.Value, 10))
 	memory := resource.MustParse(data.Memory.Value)
+	disks  := []kubeberth.AttachedDisk{}
+	for _, disk := range data.Disks {
+		disks = append(disks, kubeberth.AttachedDisk{Name: disk.Name.Value})
+	}
+
 	server := &kubeberth.RequestServer{
 		Name:       data.Name.Value,
 		Running:    data.Running.Value,
@@ -130,7 +135,7 @@ func newRequestServer(data *serverResourceData) *kubeberth.RequestServer {
 		MACAddress: data.MACAddress.Value,
 		Hostname:   data.Hostname.Value,
 		Hosting:    data.Hosting.Value,
-		Disk:       &kubeberth.AttachedDisk{Name: data.Disk.Name.Value},
+		Disks:      disks,
 	}
 
 	if data.CloudInit != nil {
