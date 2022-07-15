@@ -14,13 +14,13 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
-//var _ tfsdk.ResourceType = cloudinitResourceType{}
-//var _ tfsdk.Resource = cloudinitResource{}
-//var _ tfsdk.ResourceWithImportState = cloudinitResource{}
+//var _ tfsdk.ResourceType = isoimageResourceType{}
+//var _ tfsdk.Resource = isoimageResource{}
+//var _ tfsdk.ResourceWithImportState = isoimageResource{}
 
-type cloudinitResourceType struct{}
+type isoimageResourceType struct{}
 
-func (t cloudinitResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (t isoimageResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		// This description is used by the documentation generator and the language server.
 		MarkdownDescription: "Example resource",
@@ -31,55 +31,50 @@ func (t cloudinitResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, dia
 				Type:                types.StringType,
 				Required:            true,
 			},
-			"user_data": {
-				MarkdownDescription: "user_data",
+			"size": {
+				MarkdownDescription: "size",
 				Type:                types.StringType,
-				Optional:            true,
+				Required:            true,
 			},
-			"network_data": {
-				MarkdownDescription: "network_data",
+			"repository": {
+				MarkdownDescription: "repository",
 				Type:                types.StringType,
-				Optional:            true,
+				Required:            true,
 			},
 		},
 	}, nil
 }
 
-func (t cloudinitResourceType) NewResource(ctx context.Context, in tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
+func (t isoimageResourceType) NewResource(ctx context.Context, in tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
 	provider, diags := convertProviderType(in)
 
-	return cloudinitResource{
+	return isoimageResource{
 		provider: provider,
 	}, diags
 }
 
-type cloudinitResourceData struct {
-	Name        types.String `tfsdk:"name"`
-	UserData    types.String `tfsdk:"user_data"`
-	NetworkData types.String `tfsdk:"network_data"`
+type isoimageResourceData struct {
+	Name       types.String `tfsdk:"name"`
+	Size       types.String `tfsdk:"size"`
+	Repository types.String `tfsdk:"repository"`
 }
 
-type cloudinitResource struct {
+type isoimageResource struct {
 	provider provider
 }
 
-func createNewCloudInit(data *cloudinitResourceData) *kubeberth.RequestCloudInit {
-	cloudinit := &kubeberth.RequestCloudInit{
-		Name: data.Name.Value,
+func createNewISOImage(data *isoimageResourceData) *kubeberth.RequestISOImage {
+	isoimage := &kubeberth.RequestISOImage{
+		Name:       data.Name.Value,
+		Size:       data.Size.Value,
+		Repository: data.Repository.Value,
 	}
 
-	if !data.UserData.Null {
-		cloudinit.UserData = data.UserData.Value
-	}
-	if !data.NetworkData.Null {
-		cloudinit.NetworkData = data.NetworkData.Value
-	}
-
-	return cloudinit
+	return isoimage
 }
 
-func (r cloudinitResource) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
-	var data cloudinitResourceData
+func (r isoimageResource) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
+	var data isoimageResourceData
 
 	diags := req.Config.Get(ctx, &data)
 	resp.Diagnostics.Append(diags...)
@@ -96,11 +91,11 @@ func (r cloudinitResource) Create(ctx context.Context, req tfsdk.CreateResourceR
 	//     return
 	// }
 
-	newCloudInit := createNewCloudInit(&data)
-	createdCloudInit, err := r.provider.client.CreateCloudInit(ctx, newCloudInit)
-	tflog.Trace(ctx, fmt.Sprintf("cloudinit: %+v\n", createdCloudInit))
+	newISOImage := createNewISOImage(&data)
+	createdISOImage, err := r.provider.client.CreateISOImage(ctx, newISOImage)
+	tflog.Trace(ctx, fmt.Sprintf("isoimage: %+v\n", createdISOImage))
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create cloudinit, got error: %s", err))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create isoimage, got error: %s", err))
 		return
 	}
 
@@ -118,8 +113,8 @@ func (r cloudinitResource) Create(ctx context.Context, req tfsdk.CreateResourceR
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r cloudinitResource) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
-	var data cloudinitResourceData
+func (r isoimageResource) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
+	var data isoimageResourceData
 
 	diags := req.State.Get(ctx, &data)
 	resp.Diagnostics.Append(diags...)
@@ -136,10 +131,10 @@ func (r cloudinitResource) Read(ctx context.Context, req tfsdk.ReadResourceReque
 	//     return
 	// }
 
-	cloudinit, err := r.provider.client.GetCloudInit(ctx, data.Name.Value)
-	tflog.Trace(ctx, fmt.Sprintf("cloudinit: %+v\n", cloudinit))
+	isoimage, err := r.provider.client.GetISOImage(ctx, data.Name.Value)
+	tflog.Trace(ctx, fmt.Sprintf("isoimage: %+v\n", isoimage))
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read cloudinit, got error: %s", err))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read isoimage, got error: %s", err))
 		return
 	}
 
@@ -149,8 +144,8 @@ func (r cloudinitResource) Read(ctx context.Context, req tfsdk.ReadResourceReque
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r cloudinitResource) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
-	var data cloudinitResourceData
+func (r isoimageResource) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+	var data isoimageResourceData
 
 	diags := req.Plan.Get(ctx, &data)
 	resp.Diagnostics.Append(diags...)
@@ -167,11 +162,11 @@ func (r cloudinitResource) Update(ctx context.Context, req tfsdk.UpdateResourceR
 	//     return
 	// }
 
-	newCloudInit := createNewCloudInit(&data)
-	updatedCloudInit, err := r.provider.client.UpdateCloudInit(ctx, data.Name.Value, newCloudInit)
-	tflog.Trace(ctx, fmt.Sprintf("cloudinit: %+v\n", updatedCloudInit))
+	newISOImage := createNewISOImage(&data)
+	updatedISOImage, err := r.provider.client.UpdateISOImage(ctx, data.Name.Value, newISOImage)
+	tflog.Trace(ctx, fmt.Sprintf("isoimage: %+v\n", updatedISOImage))
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update cloudinit, got error: %s", err))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update isoimage, got error: %s", err))
 		return
 	}
 
@@ -181,8 +176,8 @@ func (r cloudinitResource) Update(ctx context.Context, req tfsdk.UpdateResourceR
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r cloudinitResource) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
-	var data cloudinitResourceData
+func (r isoimageResource) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+	var data isoimageResourceData
 
 	diags := req.State.Get(ctx, &data)
 	resp.Diagnostics.Append(diags...)
@@ -199,14 +194,14 @@ func (r cloudinitResource) Delete(ctx context.Context, req tfsdk.DeleteResourceR
 	//     return
 	// }
 
-	ok, err := r.provider.client.DeleteCloudInit(ctx, data.Name.Value)
-	tflog.Trace(ctx, fmt.Sprintf("cloudinit: %+v\n", ok))
+	ok, err := r.provider.client.DeleteISOImage(ctx, data.Name.Value)
+	tflog.Trace(ctx, fmt.Sprintf("isoimage: %+v\n", ok))
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete cloudinit, got error: %s", err))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete isoimage, got error: %s", err))
 		return
 	}
 }
 
-func (r cloudinitResource) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
+func (r isoimageResource) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
 	tfsdk.ResourceImportStatePassthroughID(ctx, tftypes.NewAttributePath().WithAttributeName("id"), req, resp)
 }

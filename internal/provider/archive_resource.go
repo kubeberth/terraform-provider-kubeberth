@@ -57,8 +57,8 @@ type archiveResource struct {
 	provider provider
 }
 
-func createNewArchive(data *archiveResourceData) *kubeberth.Archive {
-	archive := &kubeberth.Archive{
+func createNewArchive(data *archiveResourceData) *kubeberth.RequestArchive {
+	archive := &kubeberth.RequestArchive{
 		Name:       data.Name.Value,
 		Repository: data.Repository.Value,
 	}
