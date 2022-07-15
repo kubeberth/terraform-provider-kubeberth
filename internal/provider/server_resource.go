@@ -73,6 +73,16 @@ func (t serverResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.D
 					},
 				}, tfsdk.ListNestedAttributesOptions{}),
 			},
+			"isoimage": {
+				MarkdownDescription: "isoimage",
+				Optional:            true,
+				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+					"name": {
+						Type:     types.StringType,
+						Required: true,
+					},
+				}),
+			},
 			"cloudinit": {
 				MarkdownDescription: "cloudinit",
 				Optional:            true,
@@ -99,6 +109,10 @@ type diskData struct {
 	Name types.String `tfsdk:"name"`
 }
 
+type isoimageData struct {
+	Name types.String `tfsdk:"name"`
+}
+
 type cloudinitData struct {
 	Name types.String `tfsdk:"name"`
 }
@@ -112,6 +126,7 @@ type serverResourceData struct {
 	Hostname   types.String   `tfsdk:"hostname"`
 	Hosting    types.String   `tfsdk:"hosting"`
 	Disks      []diskData     `tfsdk:"disks"`
+	ISOImage   *isoimageData  `tfsdk:"isoimage"`
 	CloudInit  *cloudinitData `tfsdk:"cloudinit"`
 }
 
@@ -136,6 +151,12 @@ func newRequestServer(data *serverResourceData) *kubeberth.RequestServer {
 		Hostname:   data.Hostname.Value,
 		Hosting:    data.Hosting.Value,
 		Disks:      disks,
+	}
+
+	if data.ISOImage != nil {
+		if !data.ISOImage.Name.Null {
+			server.ISOImage = &kubeberth.AttachedISOImage{Name: data.ISOImage.Name.Value}
+		}
 	}
 
 	if data.CloudInit != nil {
